@@ -1,8 +1,6 @@
 const std = @import("std");
 
-test "temp" {
-    try std.testing.expectEqual(2, 1 + 1);
-}
+pub const Pool = @import("pool.zig").Pool;
 
 comptime {
     std.testing.refAllDecls(@This());
