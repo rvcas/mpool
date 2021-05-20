@@ -17,10 +17,10 @@ pub fn Pool(comptime node_byte_size: usize) type {
 
         const PoolError = error{NotInitialized};
 
-        pub fn init(capacity: usize) !Self {
+        pub fn init(total_nodes: usize) !Self {
             const bytes_per_page = std.mem.page_size;
 
-            const node_bytes = node_byte_size * capacity;
+            const node_bytes = node_byte_size * total_nodes;
 
             const leftover = node_bytes % bytes_per_page;
 
@@ -35,7 +35,7 @@ pub fn Pool(comptime node_byte_size: usize) type {
             return Self{
                 .nodes = @ptrCast([*]u8, nodes),
                 .node_count = 0,
-                .capacity = capacity,
+                .capacity = bytes_to_mmap / node_byte_size,
             };
         }
 
@@ -98,7 +98,6 @@ test "init" {
 
     try std.testing.expectEqual(pool.node_count, 0);
     try std.testing.expectEqual(pool.node_byte_size, 32);
-    try std.testing.expectEqual(pool.capacity, 1048);
     try std.testing.expect(pool.nodes != null);
 }
 
