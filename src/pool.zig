@@ -55,9 +55,9 @@ pub fn Pool(comptime node_byte_size: usize) type {
 
                 const node_data = std.mem.toBytes(node);
 
-                var node_ptr = nodes + node_id.index;
+                var node_ptr = nodes + (node_id.index * node_byte_size);
 
-                @memcpy(node_ptr, &node_data, node_byte_size);
+                @memcpy(node_ptr, &node_data, @sizeOf(T));
 
                 return node_id;
             }
@@ -69,7 +69,7 @@ pub fn Pool(comptime node_byte_size: usize) type {
             std.debug.assert(@sizeOf(T) <= node_byte_size);
 
             if (self.nodes) |nodes| {
-                const node_data = nodes + node_id.index;
+                const node_data = nodes + (node_id.index * node_byte_size);
 
                 return std.mem.bytesToValue(T, @ptrCast(*[@sizeOf(T)]u8, node_data));
             }
@@ -103,7 +103,7 @@ test "init" {
 }
 
 test "add/get" {
-    var pool = try Pool(32).init(1048);
+    var pool = try Pool(16).init(1048);
     // defer pool.deinit();
 
     const Foo = struct {
@@ -126,10 +126,9 @@ test "add/get" {
 
     try std.testing.expectEqual(pool.node_count, 2);
 
-    // TODO: why does this hold 257
-    // const foo = try pool.get(Foo, node_id1);
-    // std.debug.print("{}\n", .{foo});
-    // try std.testing.expectEqual(foo.bar, 1);
+    const foo = try pool.get(Foo, node_id1);
+
+    try std.testing.expectEqual(foo.bar, 1);
 
     const bar = try pool.get(Bar, node_id2);
 
