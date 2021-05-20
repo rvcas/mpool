@@ -103,7 +103,7 @@ test "init" {
 }
 
 test "add/get" {
-    var pool = try Pool(32).init(1048);
+    var pool = try Pool(16).init(1048);
     // defer pool.deinit();
 
     const Foo = struct {
