@@ -8,10 +8,11 @@ pub fn NodeId(comptime T: type) type {
 
 pub fn Pool(comptime node_byte_size: usize) type {
     return struct {
-        nodes: ?[*]align(node_byte_size) u8,
+        nodes: ?[*]u8,
         node_count: usize,
         capacity: usize,
         node_byte_size: usize = node_byte_size,
+        bytes_to_mmap: usize,
 
         const Self = @This();
 
@@ -36,16 +37,17 @@ pub fn Pool(comptime node_byte_size: usize) type {
                 .nodes = @ptrCast([*]u8, nodes),
                 .node_count = 0,
                 .capacity = bytes_to_mmap / node_byte_size,
+                .bytes_to_mmap = bytes_to_mmap,
             };
         }
 
-        // pub fn deinit(self: *Self) void {
-        //     if (self.nodes) |nodes| {
-        //         std.os.munmap(nodes.*);
+        pub fn deinit(self: *Self) void {
+            if (self.nodes) |nodes| {
+                std.os.munmap(@alignCast(std.mem.page_size, nodes[0..self.bytes_to_mmap]));
 
-        //         self.nodes = null;
-        //     }
-        // }
+                self.nodes = null;
+            }
+        }
 
         pub fn add(self: *Self, comptime T: type, node: T) PoolError!NodeId(T) {
             std.debug.assert(@sizeOf(T) <= node_byte_size);
@@ -94,7 +96,7 @@ pub fn Pool(comptime node_byte_size: usize) type {
 }
 test "init" {
     var pool = try Pool(32).init(1048);
-    // defer pool.deinit();
+    defer pool.deinit();
 
     try std.testing.expectEqual(pool.node_count, 0);
     try std.testing.expectEqual(pool.node_byte_size, 32);
@@ -103,7 +105,7 @@ test "init" {
 
 test "add/get" {
     var pool = try Pool(16).init(1048);
-    // defer pool.deinit();
+    defer pool.deinit();
 
     const Foo = struct {
         bar: usize,
