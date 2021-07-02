@@ -3,6 +3,12 @@ const std = @import("std");
 pub fn NodeId(comptime T: type) type {
     return struct {
         index: usize,
+
+        const Self = @This();
+
+        pub fn getType(_: Self) T {
+            return T;
+        }
     };
 }
 
